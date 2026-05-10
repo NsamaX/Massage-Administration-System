@@ -30,6 +30,12 @@ A web-based administration system for Thai massage parlors — role-based access
 3. **Set Up**
    Start MySQL in XAMPP, then create a database named `mas` via phpMyAdmin.
 
+   Import the schema and seed data:
+   ```bash
+   mysql -u root -p mas < database/schema.sql
+   mysql -u root -p mas < database/seeddata.sql
+   ```
+
    Install dependencies:
    ```bash
    npm install
