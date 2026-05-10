@@ -9,7 +9,6 @@
 | Field    | Value                                                                                 |
 | -------- | ------------------------------------------------------------------------------------- |
 | Name     | MaS (Massage Administration System)                                                   |
-| Root     | `d:\github\massage-administration-system`                                                    |
 | Domain   | Thai massage shop management web system — two roles (Admin/Secretary), sidebar layout |
 | Language | TypeScript — strict mode                                                              |
 | Runtime  | Next.js 16 App Router + React 19 + Tailwind CSS 4                                     |
