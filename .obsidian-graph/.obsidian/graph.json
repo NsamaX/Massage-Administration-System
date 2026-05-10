@@ -1,0 +1,107 @@
+{
+  "collapse-filter": false,
+  "search": "",
+  "showTags": false,
+  "showAttachments": false,
+  "hideUnresolved": false,
+  "showOrphans": true,
+  "collapse-color-groups": false,
+  "colorGroups": [
+    {
+      "query": "tag:#violation/circular-dep",
+      "color": {
+        "a": 1,
+        "rgb": 15680580
+      }
+    },
+    {
+      "query": "tag:#violation/client-server-leak",
+      "color": {
+        "a": 1,
+        "rgb": 16347926
+      }
+    },
+    {
+      "query": "tag:#violation/deep-import",
+      "color": {
+        "a": 1,
+        "rgb": 16486972
+      }
+    },
+    {
+      "query": "tag:#violation/app-deep-import",
+      "color": {
+        "a": 1,
+        "rgb": 16498468
+      }
+    },
+    {
+      "query": "tag:#violation/schema-impure",
+      "color": {
+        "a": 1,
+        "rgb": 16638023
+      }
+    },
+    {
+      "query": "tag:#entry/proxy",
+      "color": {
+        "a": 1,
+        "rgb": 16132311
+      }
+    },
+    {
+      "query": "tag:#entry/schema",
+      "color": {
+        "a": 1,
+        "rgb": 9133302
+      }
+    },
+    {
+      "query": "tag:#core/shared",
+      "color": {
+        "a": 1,
+        "rgb": 11032055
+      }
+    },
+    {
+      "query": "tag:#entry/view",
+      "color": {
+        "a": 1,
+        "rgb": 3900150
+      }
+    },
+    {
+      "query": "tag:#entry/page",
+      "color": {
+        "a": 1,
+        "rgb": 6333946
+      }
+    },
+    {
+      "query": "tag:#entry/api",
+      "color": {
+        "a": 1,
+        "rgb": 440020
+      }
+    },
+    {
+      "query": "tag:#entry/module",
+      "color": {
+        "a": 1,
+        "rgb": 1357990
+      }
+    }
+  ],
+  "collapse-display": true,
+  "showArrow": true,
+  "textFadeMultiplier": 0,
+  "nodeSizeMultiplier": 1.2,
+  "lineSizeMultiplier": 1,
+  "collapse-forces": true,
+  "centerStrength": 0.518713248970312,
+  "repelStrength": 10,
+  "linkStrength": 1,
+  "linkDistance": 250,
+  "scale": 0.5087618855792585,
+  "close": false
+}

@@ -1,0 +1,12 @@
+---
+tags:
+  - layer/modules
+  - module/dashboard
+  - area/module-root
+  - entry/module
+  - entry/schema
+---
+
+# schema.ts
+
+`src/modules/dashboard/schema.ts`
