@@ -11,6 +11,7 @@ export function AuthLayout({ users }: Props) {
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMobile(mq.matches);
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mq.addEventListener("change", handler);
@@ -24,8 +25,8 @@ export function AuthLayout({ users }: Props) {
       <div className="login-m">
         <div className="login-m-header">
           <h1 className="login-title login-m-header-title">
-            ma<span className="login-dot login-m-header-dot" />
-            <em>sǎn</em>
+            R<span className="login-dot login-m-header-dot" />
+            <em>Ǐch</em>
           </h1>
         </div>
         <div className="login-m-body">
@@ -42,8 +43,8 @@ export function AuthLayout({ users }: Props) {
 
         <div>
           <h1 className="login-title">
-            ma<span className="login-dot" />
-            <em>sǎn</em>
+            R<span className="login-dot" />
+            <em>Ǐch</em>
           </h1>
           <p className="login-lede">
             ระบบบริหารร้านนวด — จัดการนัดหมาย พนักงาน ห้องบริการ และรายได้ของร้านได้ในที่เดียว

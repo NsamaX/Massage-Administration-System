@@ -10,7 +10,7 @@ export type DashboardStats = {
 export type RoomState = {
   id: number;
   number: number;
-  staffName: string | null;
+  staffNames: string[];
   staffImageUrl: string | null;
   serviceName: string | null;
   startTime: string | null;
@@ -19,6 +19,7 @@ export type RoomState = {
 export type HistoryEntry = {
   date: string;
   time: string;
+  endTime: string | null;
   meridiem: string;
   staffName: string;
   staffImageUrl: string | null;

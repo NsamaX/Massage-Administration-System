@@ -37,6 +37,7 @@ export function SignInForm({ users }: Props) {
 
   useEffect(() => {
     if (state.error) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPin("");
       setShake(true);
       const t = setTimeout(() => setShake(false), 500);
@@ -88,13 +89,9 @@ export function SignInForm({ users }: Props) {
                     }}
                   >
                     <div className="av-sm" style={{ fontStyle: "normal" }}>{firstConsonant(u.name)}</div>
-                    <div>
-                      <div style={{ fontSize: "13.5px", color: "var(--ink)", fontWeight: 500 }}>
-                        {u.name}
-                      </div>
-                      <div style={{ fontSize: "11.5px", color: "var(--muted)", marginTop: "1px", fontFamily: "var(--font-ibm-plex), sans-serif", letterSpacing: 0 }}>
-                        {ROLE_LABEL[u.role]}
-                      </div>
+                    <div className="who-dd-info">
+                      <div className="nm">{u.name}</div>
+                      <div className="rl">{ROLE_LABEL[u.role]}</div>
                     </div>
                   </button>
                 ))}

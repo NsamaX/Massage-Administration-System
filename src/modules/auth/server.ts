@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { signIn as _signIn, signOut as _signOut } from "./api/actions";
 import {
   getAuthUsers as _getAuthUsers,
@@ -34,4 +35,10 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   } catch {
     return null;
   }
+}
+
+export async function requireRole(allowed: AuthUser["role"][]): Promise<AuthUser> {
+  const user = await getCurrentUser();
+  if (!user || !allowed.includes(user.role)) redirect("/dashboard");
+  return user;
 }

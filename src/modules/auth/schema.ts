@@ -11,5 +11,5 @@ export type SignInState = {
 export const ROLE_LABEL: Record<AuthUser["role"], string> = {
   dev: "นักพัฒนา",
   admin: "ผู้จัดการ",
-  staff: "พนักงาน",
+  staff: "พนักงานต้อนรับ",
 };

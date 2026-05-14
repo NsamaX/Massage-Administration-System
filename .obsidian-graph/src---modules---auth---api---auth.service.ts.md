@@ -3,6 +3,7 @@ tags:
   - layer/modules
   - module/auth
   - area/api
+  - coupling/medium
 ---
 
 # auth.service.ts

@@ -13,6 +13,6 @@ tags:
 
 ## Imports
 - [[src---modules---auth---schema.ts]]
-- [[src---modules---core---client.ts]]
+- [[src---modules---users---components---UsersDialog.tsx]]
 - [[src---modules---users---schema.ts]]
 - [[src---modules---users---server.ts]]

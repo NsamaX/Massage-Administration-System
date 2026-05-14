@@ -7,6 +7,7 @@ export type Massage = {
   hourlyRate: number;
   image_url: string | null;
   status: "active" | "paused" | "inactive";
+  durations: number[];
 };
 
 export const STATUS_LABEL: Record<Massage["status"], string> = {

@@ -1,5 +1,6 @@
 export type SalaryRow = {
   id: number;
+  staffCode: string | null;
   firstName: string;
   lastName: string;
   hours: number;
@@ -13,6 +14,7 @@ export type ServicePopularity = {
 
 export type ReportData = {
   dailyCounts: number[];
+  dailyRevenue: number[];
   servicePopularity: ServicePopularity[];
   salaryRows: SalaryRow[];
 };
@@ -26,10 +28,14 @@ export type PayrollPeriod = {
 export type StaffWorkEntry = {
   date: string;
   time: string;
+  endTime: string;
   meridiem: string;
+  staffCode: string | null;
   staffName: string;
   staffImageUrl: string | null;
   serviceName: string;
+  durationMin: number;
   roomLabel: string | null;
   hourlyRateSnapshot: number;
+  computedSalary: number;
 };

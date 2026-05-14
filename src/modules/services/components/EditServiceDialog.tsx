@@ -18,20 +18,24 @@ export function EditServiceDialog({ open, onClose, service }: Props) {
   const [price, setPrice] = useState("");
   const [hourlyRate, setHourlyRate] = useState("");
   const [status, setStatus] = useState<Massage["status"]>("active");
+  const [durations, setDurations] = useState<number[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const closeOnClick = useRef(false);
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(service?.name ?? "");
       setDescription(service?.description ?? "");
       setDuration(service ? String(service.duration) : "");
       setPrice(service ? String(service.price) : "");
       setHourlyRate(service ? String(service.hourlyRate) : "");
       setStatus(service?.status ?? "active");
+      setDurations(service?.durations ?? []);
       setImageFile(null);
       setImagePreview(null);
       setError(null);
@@ -63,25 +67,25 @@ export function EditServiceDialog({ open, onClose, service }: Props) {
     setError(null);
     startTransition(async () => {
       const res = service
-        ? await updateMassage(service.id, data, imageFile)
-        : await createMassage(data, imageFile);
+        ? await updateMassage(service.id, data, durations, imageFile)
+        : await createMassage(data, durations, imageFile);
       if (res.error) { setError(res.error); return; }
       onClose();
     });
   }
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div
+      className="modal-backdrop"
+      onMouseDown={(e) => { closeOnClick.current = e.target === e.currentTarget; }}
+      onClick={() => { if (closeOnClick.current) onClose(); }}
+    >
       <div className="modal" style={{ maxWidth: "520px" }} onClick={(e) => e.stopPropagation()}>
-        {/* Head */}
         <div className="modal-head">
-          <h3 style={{ fontFamily: '"Cormorant Garamond", serif', fontSize: "20px", fontWeight: 500 }}>
-            {service ? "แก้ไขแผนนวด" : "เพิ่มแผนนวด"}
-          </h3>
+          <h3 className="serif" style={{ fontSize: "18px" }}>{service ? "แก้ไขแผนนวด" : "เพิ่มแผนนวด"}</h3>
           <button type="button" className="modal-close" onClick={onClose} aria-label="ปิด">×</button>
         </div>
 
-        {/* Body */}
         <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           <input
             ref={fileInputRef}
@@ -171,6 +175,59 @@ export function EditServiceDialog({ open, onClose, service }: Props) {
           </div>
 
           <div className="field">
+            <span className="lbl">ตัวเลือกระยะเวลา</span>
+            <div
+              style={{
+                display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center",
+                padding: "6px 8px", border: "1px solid var(--line)", borderRadius: "3px",
+                background: "var(--surface)", minHeight: "38px",
+              }}
+            >
+              {durations.map((d) => (
+                <span
+                  key={d}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: "3px",
+                    padding: "2px 8px", fontSize: "12px",
+                    border: "1px solid var(--umber)", borderRadius: "3px",
+                    color: "var(--umber)", whiteSpace: "nowrap",
+                  }}
+                >
+                  {d} นาที
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setDurations((prev) => prev.filter((x) => x !== d)); }}
+                    style={{ lineHeight: 1, background: "none", border: "none", cursor: "pointer", color: "var(--umber)", padding: "0 1px", fontSize: "13px" }}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div style={{ marginTop: "6px" }}>
+              <div style={{ display: "flex", gap: "4px" }}>
+                {[30, 45, 60, 90, 120, 150, 180].map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => { if (!durations.includes(d)) setDurations((prev) => [...prev, d].sort((a, b) => a - b)); }}
+                    disabled={durations.includes(d)}
+                    style={{
+                      padding: "2px 7px", fontSize: "11px",
+                      border: "1px solid var(--line)", borderRadius: "3px",
+                      background: "transparent", cursor: durations.includes(d) ? "default" : "pointer",
+                      color: durations.includes(d) ? "var(--muted)" : "var(--fg)",
+                      opacity: durations.includes(d) ? 0.4 : 1,
+                    }}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="field">
             <span className="lbl">สถานะ</span>
             <select
               className="select-field"
@@ -184,7 +241,6 @@ export function EditServiceDialog({ open, onClose, service }: Props) {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="modal-foot">
           {error && (
             <span style={{ marginRight: "auto", fontSize: "12px", color: "var(--danger)" }}>{error}</span>

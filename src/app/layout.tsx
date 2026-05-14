@@ -42,7 +42,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="th" className={`h-full ${cormorant.variable} ${ibmPlexThai.variable} ${jetbrainsMono.variable}`}>
-      <body className="min-h-full antialiased" suppressHydrationWarning>{children}</body>
+      <body className="min-h-full antialiased">{children}</body>
     </html>
   );
 }

@@ -18,25 +18,25 @@ type NavGroup = {
 
 const ALL_GROUPS: NavGroup[] = [
   {
-    label: "Workspace",
+    label: "พื้นที่ทำงาน",
     items: [
-      { href: "/dashboard",    num: "01", label: "ภาพรวม"  },
-      { href: "/appointments", num: "02", label: "นัดหมาย"  },
-      { href: "/entry",        num: "03", label: "ลงข้อมูล" },
+      { href: "/dashboard",    num: "๐๑", label: "ภาพรวม"  },
+      { href: "/appointments", num: "๐๒", label: "นัดหมาย"  },
+      { href: "/entry",        num: "๐๓", label: "ลงข้อมูล" },
     ],
   },
   {
-    label: "Studio",
+    label: "สตูดิโอ",
     items: [
-      { href: "/staff",    num: "04", label: "พนักงาน" },
-      { href: "/services", num: "05", label: "บริการ"  },
+      { href: "/staff",    num: "๐๔", label: "พนักงาน" },
+      { href: "/services", num: "๐๕", label: "บริการ"  },
     ],
   },
   {
-    label: "Insight",
+    label: "ข้อมูลเชิงลึก",
     items: [
-      { href: "/report", num: "06", label: "รายงาน" },
-      { href: "/users",  num: "07", label: "ผู้ใช้"  },
+      { href: "/report", num: "๐๖", label: "รายงาน" },
+      { href: "/users",  num: "๐๗", label: "ผู้ใช้"  },
     ],
   },
 ];

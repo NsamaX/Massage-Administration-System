@@ -3,6 +3,7 @@
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { db } from "@/lib/db";
+import { getCurrentUser } from "@/modules/auth/server";
 import { revalidatePath } from "next/cache";
 import type { Employee, Skill } from "./schema";
 
@@ -16,10 +17,31 @@ function dbError(err: unknown): string {
   return "เกิดข้อผิดพลาด กรุณาลองใหม่";
 }
 
+function normalizeEmployeeCode(input: string | null | undefined): string | null {
+  if (input == null) return null;
+  const code = input.trim();
+  return code.length === 0 ? null : code;
+}
+
+async function ensureCanManageStaff(): Promise<ActionResult | null> {
+  const user = await getCurrentUser();
+  if (!user) return { error: "กรุณาเข้าสู่ระบบ" };
+  if (user.role !== "admin" && user.role !== "dev") return { error: "ไม่มีสิทธิ์ดำเนินการ" };
+  return null;
+}
+
+async function ensureCanToggleAttendance(): Promise<ActionResult | null> {
+  const user = await getCurrentUser();
+  if (!user) return { error: "กรุณาเข้าสู่ระบบ" };
+  if (user.role !== "admin" && user.role !== "dev" && user.role !== "staff") return { error: "ไม่มีสิทธิ์ดำเนินการ" };
+  return null;
+}
+
 export async function getEmployees(): Promise<Employee[]> {
   const [rows] = await db.query(`
     SELECT
       e.id,
+      e.employee_code     AS employeeCode,
       e.first_name        AS firstName,
       e.last_name         AS lastName,
       e.phone,
@@ -55,13 +77,22 @@ async function saveEmployeeImageFile(file: File, employeeId: number): Promise<st
 
 export async function updateEmployee(
   id: number,
-  data: Pick<Employee, "firstName" | "lastName" | "phone" | "employed" | "skills">,
+  data: Pick<Employee, "employeeCode" | "firstName" | "lastName" | "phone" | "employed" | "skills">,
   imageFile?: File | null
 ): Promise<ActionResult> {
+  const denied = await ensureCanManageStaff();
+  if (denied) return denied;
   try {
+    const rawCode = normalizeEmployeeCode(data.employeeCode);
+    const employeeCode = data.employed ? rawCode : null;
+    if (data.employed) {
+      if (employeeCode === null) return { error: "กรุณาระบุรหัสพนักงาน 3 หลัก" };
+      if (!/^\d{3}$/.test(employeeCode)) return { error: "รหัสพนักงานต้องเป็นตัวเลข 3 หลัก" };
+    }
+
     await db.query(
-      "UPDATE employees SET first_name=?, last_name=?, phone=?, employment_status=? WHERE id=?",
-      [data.firstName, data.lastName, data.phone, data.employed ? "employed" : "terminated", id]
+      "UPDATE employees SET employee_code=?, first_name=?, last_name=?, phone=?, employment_status=? WHERE id=?",
+      [employeeCode, data.firstName, data.lastName, data.phone, data.employed ? "employed" : "terminated", id]
     );
 
     await db.query("DELETE FROM employee_skills WHERE employee_id=?", [id]);
@@ -90,13 +121,19 @@ export async function updateEmployee(
 }
 
 export async function createEmployee(
-  data: Pick<Employee, "firstName" | "lastName" | "phone" | "skills">,
+  data: Pick<Employee, "employeeCode" | "firstName" | "lastName" | "phone" | "skills">,
   imageFile?: File | null
 ): Promise<ActionResult> {
+  const denied = await ensureCanManageStaff();
+  if (denied) return denied;
   try {
+    const employeeCode = normalizeEmployeeCode(data.employeeCode);
+    if (employeeCode === null) return { error: "กรุณาระบุรหัสพนักงาน 3 หลัก" };
+    if (!/^\d{3}$/.test(employeeCode)) return { error: "รหัสพนักงานต้องเป็นตัวเลข 3 หลัก" };
+
     const [result] = await db.query(
-      "INSERT INTO employees (first_name, last_name, phone, employment_status) VALUES (?, ?, ?, 'employed')",
-      [data.firstName, data.lastName, data.phone]
+      "INSERT INTO employees (employee_code, first_name, last_name, phone, employment_status) VALUES (?, ?, ?, ?, 'employed')",
+      [employeeCode, data.firstName, data.lastName, data.phone]
     );
     const id = (result as { insertId: number }).insertId;
 
@@ -129,6 +166,8 @@ export async function getSkills(): Promise<Skill[]> {
 }
 
 export async function createSkill(name: string): Promise<ActionResult> {
+  const denied = await ensureCanManageStaff();
+  if (denied) return denied;
   try {
     await db.query("INSERT INTO skills (name) VALUES (?)", [name.trim()]);
     revalidatePath("/staff");
@@ -139,6 +178,8 @@ export async function createSkill(name: string): Promise<ActionResult> {
 }
 
 export async function updateSkill(id: number, name: string): Promise<ActionResult> {
+  const denied = await ensureCanManageStaff();
+  if (denied) return denied;
   try {
     await db.query("UPDATE skills SET name=? WHERE id=?", [name.trim(), id]);
     revalidatePath("/staff");
@@ -149,6 +190,8 @@ export async function updateSkill(id: number, name: string): Promise<ActionResul
 }
 
 export async function deleteSkill(id: number): Promise<ActionResult> {
+  const denied = await ensureCanManageStaff();
+  if (denied) return denied;
   try {
     await db.query("DELETE FROM employee_skills WHERE skill_id=?", [id]);
     await db.query("DELETE FROM skills WHERE id=?", [id]);
@@ -160,6 +203,8 @@ export async function deleteSkill(id: number): Promise<ActionResult> {
 }
 
 export async function toggleAttendance(employeeId: number): Promise<ActionResult> {
+  const denied = await ensureCanToggleAttendance();
+  if (denied) return denied;
   try {
     await db.query(
       `INSERT INTO attendance (employee_id, date, status)

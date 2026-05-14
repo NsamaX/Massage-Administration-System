@@ -4,7 +4,7 @@ tags:
   - module/auth
   - area/module-root
   - entry/module
-  - coupling/medium
+  - coupling/high
 ---
 
 # server.ts

@@ -179,6 +179,12 @@
   },
   "active": "2ef9d51ea8cbe6fb",
   "lastOpenFiles": [
+    "src---modules---entry---components---RecentEntriesTable.tsx.md",
+    "src---modules---entry---components---EntryForm.tsx.md",
+    "src---modules---staff---components---StaffTable.tsx.md",
+    "src---modules---users---components---UsersDialog.tsx.md",
+    "src---modules---dashboard---components---RoomPanel.tsx.md",
+    "src---modules---staff---components---SkillsManager.tsx.md",
     "src---app---auth---page.tsx.md",
     "src---app---(main)---report---page.tsx.md",
     "src---app---(main)---staff---page.tsx.md",
@@ -198,12 +204,6 @@
     "src---modules---auth---api---actions.ts.md",
     "src---modules---appointments---server.ts.md",
     "src---modules---auth---api---auth.service.ts.md",
-    "src---modules---appointments---components---AppointmentsView.tsx.md",
-    "src---modules---appointments---schema.ts.md",
-    "src---lib---db---schema.ts.md",
-    "src---modules---services---client.ts.md",
-    "src---modules---report---client.ts.md",
-    "src---modules---core---components---Layout.tsx.md",
-    "src---modules---dashboard---client.ts.md"
+    "src---modules---appointments---components---AppointmentsView.tsx.md"
   ]
 }

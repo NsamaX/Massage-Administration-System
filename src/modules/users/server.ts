@@ -21,9 +21,9 @@ export async function getUsers(): Promise<UserRow[]> {
     SELECT
       u.id,
       r.name AS role,
-      COALESCE(CONCAT(e.first_name, ' ', e.last_name), CASE r.name WHEN 'dev' THEN 'นักพัฒนา' ELSE 'Admin' END) AS name,
+      COALESCE(CONCAT(e.first_name, ' ', e.last_name), 'ไม่ระบุ') AS name,
       u.employee_id AS employeeId,
-      u.last_login_at AS lastLoginAt
+      DATE_FORMAT(u.last_login_at, '%Y-%m-%d %H:%i:%s') AS lastLoginAt
     FROM users u
     JOIN roles r ON r.id = u.role_id
     LEFT JOIN employees e ON e.id = u.employee_id

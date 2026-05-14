@@ -5,107 +5,35 @@ import { type Employee } from "../schema";
 import { createEmployee, updateEmployee } from "../server";
 import { useScrollLock } from "@/modules/core/client";
 
-export function CreateModal({ allSkills, onClose }: { allSkills: string[]; onClose: () => void }) {
-  useScrollLock();
-  const [form, setForm] = useState({ firstName: "", lastName: "", phone: "", skills: [] as string[] });
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [cropOpen, setCropOpen] = useState(false);
-  const [cropFile, setCropFile] = useState<File | null>(null);
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const remaining = allSkills.filter((s) => !form.skills.includes(s));
-  const displayImage = imagePreview ?? null;
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setCropFile(file);
-    setCropOpen(true);
-    e.target.value = "";
-  }
-
-  function handleCropCancel() { setCropOpen(false); setCropFile(null); }
-  function handleCropSave(file: File) {
-    setImageFile(file);
-    setImagePreview((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
-    setCropOpen(false);
-    setCropFile(null);
-  }
-
-  function handleSave() {
-    setError(null);
-    startTransition(async () => {
-      const res = await createEmployee({ firstName: form.firstName, lastName: form.lastName, phone: form.phone, skills: form.skills }, imageFile);
-      if (res.error) { setError(res.error); return; }
-      onClose();
-    });
-  }
-
-  return (
-    <>
-      <div className="modal-backdrop" onClick={onClose}>
-        <div className="modal" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-head">
-            <h3 className="serif" style={{ fontSize: "18px" }}>เพิ่มพนักงานใหม่</h3>
-            <button type="button" className="modal-close" onClick={onClose}>×</button>
-          </div>
-          <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
-              <div className="field" style={{ margin: 0, flexShrink: 0 }}>
-                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFileChange} />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  style={{
-                    width: "120px", height: "120px", borderRadius: "50%",
-                    border: "1px solid var(--line)", background: "var(--surface)",
-                    cursor: "pointer", overflow: "hidden", display: "grid", placeItems: "center",
-                  }}
-                >
-                  {displayImage ? (
-                    <img src={displayImage} alt="preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  ) : (
-                    <span style={{ color: "var(--faint)", fontFamily: '"Cormorant Garamond", serif', fontStyle: "italic", fontSize: "36px" }}>
-                      {form.firstName[0] ?? "?"}
-                    </span>
-                  )}
-                </button>
-              </div>
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px" }}>
-                <ModalField label="ชื่อ" value={form.firstName} onChange={(v) => setForm((f) => ({ ...f, firstName: v }))} />
-                <ModalField label="นามสกุล" value={form.lastName} onChange={(v) => setForm((f) => ({ ...f, lastName: v }))} />
-              </div>
-            </div>
-            <ModalField label="เบอร์โทร" value={form.phone} onChange={(v) => setForm((f) => ({ ...f, phone: v }))} />
-            <SkillPicker
-              skills={form.skills}
-              remaining={remaining}
-              onAdd={(s) => setForm((f) => ({ ...f, skills: [...f.skills, s] }))}
-              onRemove={(s) => setForm((f) => ({ ...f, skills: f.skills.filter((x) => x !== s) }))}
-            />
-          </div>
-          <div className="modal-foot">
-            {error && <span style={{ marginRight: "auto", fontSize: "12px", color: "var(--danger)" }}>{error}</span>}
-            <button type="button" className="btn btn-ghost" onClick={onClose} disabled={pending}>ยกเลิก</button>
-            <button type="button" className="btn btn-primary" onClick={handleSave} disabled={pending}>
-              {pending ? "กำลังบันทึก..." : "บันทึก"}
-            </button>
-          </div>
-        </div>
-      </div>
-      {cropOpen && cropFile && (
-        <ImageCropDialog file={cropFile} onCancel={handleCropCancel} onSave={handleCropSave} />
-      )}
-    </>
-  );
+function normalizeCodeInput(value: string): string {
+  return value.replace(/\D/g, "").slice(0, 3);
 }
 
-export function EditModal({ staff, allSkills, onClose }: { staff: Employee; allSkills: string[]; onClose: () => void }) {
+type FormState = {
+  employeeCode: string | null;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  skills: string[];
+  employed: boolean;
+};
+
+export function StaffFormModal({ staff, allSkills, onClose }: {
+  staff?: Employee;
+  allSkills: string[];
+  onClose: () => void;
+}) {
   useScrollLock();
-  const [form, setForm] = useState<Employee>({ ...staff });
+  const isEdit = staff !== undefined;
+
+  const [form, setForm] = useState<FormState>({
+    employeeCode: staff?.employeeCode ?? "",
+    firstName: staff?.firstName ?? "",
+    lastName: staff?.lastName ?? "",
+    phone: staff?.phone ?? "",
+    skills: staff?.skills ?? [],
+    employed: staff?.employed ?? true,
+  });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [cropOpen, setCropOpen] = useState(false);
@@ -113,9 +41,10 @@ export function EditModal({ staff, allSkills, onClose }: { staff: Employee; allS
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const closeOnClick = useRef(false);
 
   const remaining = allSkills.filter((s) => !form.skills.includes(s));
-  const displayImage = imagePreview ?? form.imageUrl ?? null;
+  const displayImage = imagePreview ?? (isEdit ? (staff.imageUrl ?? null) : null);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -123,19 +52,6 @@ export function EditModal({ staff, allSkills, onClose }: { staff: Employee; allS
     setCropFile(file);
     setCropOpen(true);
     e.target.value = "";
-  }
-
-  function handleSave() {
-    setError(null);
-    startTransition(async () => {
-      const res = await updateEmployee(
-        form.id,
-        { firstName: form.firstName, lastName: form.lastName, phone: form.phone, employed: form.employed, skills: form.skills },
-        imageFile
-      );
-      if (res.error) { setError(res.error); return; }
-      onClose();
-    });
   }
 
   function handleCropCancel() { setCropOpen(false); setCropFile(null); }
@@ -146,16 +62,32 @@ export function EditModal({ staff, allSkills, onClose }: { staff: Employee; allS
     setCropFile(null);
   }
 
+  function handleSave() {
+    setError(null);
+    startTransition(async () => {
+      const res = isEdit
+        ? await updateEmployee(staff.id, { employeeCode: form.employeeCode, firstName: form.firstName, lastName: form.lastName, phone: form.phone, employed: form.employed, skills: form.skills }, imageFile)
+        : await createEmployee({ employeeCode: form.employeeCode ?? "", firstName: form.firstName, lastName: form.lastName, phone: form.phone, skills: form.skills }, imageFile);
+      if (res.error) { setError(res.error); return; }
+      onClose();
+    });
+  }
+
   return (
     <>
-      <div className="modal-backdrop" onClick={onClose}>
+      <div
+        className="modal-backdrop"
+        onMouseDown={(e) => { closeOnClick.current = e.target === e.currentTarget; }}
+        onClick={() => { if (closeOnClick.current) onClose(); }}
+      >
         <div className="modal" onClick={(e) => e.stopPropagation()}>
           <div className="modal-head">
-            <h3 className="serif" style={{ fontSize: "18px" }}>แก้ไขข้อมูลพนักงาน</h3>
+            <h3 className="serif" style={{ fontSize: "18px" }}>
+              {isEdit ? "แก้ไขข้อมูลพนักงาน" : "เพิ่มพนักงานใหม่"}
+            </h3>
             <button type="button" className="modal-close" onClick={onClose}>×</button>
           </div>
           <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            {/* Avatar + name row */}
             <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
               <div className="field" style={{ margin: 0, flexShrink: 0 }}>
                 <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFileChange} />
@@ -183,19 +115,32 @@ export function EditModal({ staff, allSkills, onClose }: { staff: Employee; allS
               </div>
             </div>
 
+            <ModalField
+              label="รหัสพนักงาน (3 หลัก)"
+              value={form.employeeCode ?? ""}
+              onChange={(v) => {
+                const next = normalizeCodeInput(v);
+                setForm((f) => ({ ...f, employeeCode: isEdit ? (next || null) : next }));
+              }}
+            />
             <ModalField label="เบอร์โทร" value={form.phone} onChange={(v) => setForm((f) => ({ ...f, phone: v }))} />
 
-            <div className="field">
-              <span className="lbl">สถานะ</span>
-              <select
-                className="select-field"
-                value={form.employed ? "employed" : "terminated"}
-                onChange={(e) => setForm((f) => ({ ...f, employed: e.target.value === "employed" }))}
-              >
-                <option value="employed">จ้างงาน</option>
-                <option value="terminated">เลิกจ้าง</option>
-              </select>
-            </div>
+            {isEdit && (
+              <div className="field">
+                <span className="lbl">สถานะ</span>
+                <select
+                  className="select-field"
+                  value={form.employed ? "employed" : "terminated"}
+                  onChange={(e) => {
+                    const employed = e.target.value === "employed";
+                    setForm((f) => ({ ...f, employed, employeeCode: employed ? f.employeeCode : null }));
+                  }}
+                >
+                  <option value="employed">จ้างงาน</option>
+                  <option value="terminated">เลิกจ้าง</option>
+                </select>
+              </div>
+            )}
 
             <SkillPicker
               skills={form.skills}
@@ -227,7 +172,57 @@ function SkillPicker({ skills, remaining, onAdd, onRemove }: {
   onRemove: (s: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [dropWidth, setDropWidth] = useState<number>(180);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const dropRef = useRef<HTMLDivElement>(null);
   const CHIP_VARIANTS = ["", " chip-sage", " chip-clay", " chip-brass"];
+  const DROPDOWN_HEIGHT = 205;
+
+  useEffect(() => {
+    if (!open) return;
+
+    function onPointerDown(e: PointerEvent) {
+      const wrap = wrapRef.current;
+      if (!wrap) return;
+      if (!wrap.contains(e.target as Node)) setOpen(false);
+    }
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("pointerdown", onPointerDown, true);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  function handleOpen() {
+    if (open) { setOpen(false); return; }
+
+    const btn = btnRef.current;
+    if (btn) setDropWidth(Math.max(btn.getBoundingClientRect().width, 180));
+
+    setOpen(true);
+    requestAnimationFrame(() => {
+      const dropdown = dropRef.current;
+      const wrap = wrapRef.current;
+      if (!dropdown || !wrap) return;
+
+      const modal = wrap.closest(".modal");
+      const modalBody = wrap.closest(".modal-body");
+      if (!modalBody) return;
+
+      const modalBottom = modal ? modal.getBoundingClientRect().bottom - 8 : window.innerHeight - 8;
+      const dropBottom = dropdown.getBoundingClientRect().bottom;
+      if (dropBottom > modalBottom) {
+        modalBody.scrollTop += dropBottom - modalBottom;
+      }
+    });
+  }
 
   return (
     <div className="field" style={{ marginTop: "4px" }}>
@@ -244,30 +239,34 @@ function SkillPicker({ skills, remaining, onAdd, onRemove }: {
         </div>
       )}
       {remaining.length > 0 && (
-        <div style={{ position: "relative" }}>
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            onClick={() => setOpen((v) => !v)}
-          >
+        <div ref={wrapRef} style={{ position: "relative", display: "inline-block" }}>
+          <button ref={btnRef} type="button" className="btn btn-ghost btn-sm" onClick={handleOpen}>
             + เลือกทักษะ
           </button>
           {open && (
-            <>
-              <div style={{ position: "fixed", inset: 0, zIndex: 10 }} onClick={() => setOpen(false)} />
-              <div className="filter-dropdown" style={{ left: 0, right: "auto", minWidth: "180px" }}>
-                {remaining.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    className="filter-item"
-                    onClick={() => { onAdd(s); setOpen(false); }}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </>
+            <div
+              ref={dropRef}
+              className="filter-dropdown"
+              style={{
+                left: 0,
+                right: "auto",
+                minWidth: dropWidth,
+                maxHeight: DROPDOWN_HEIGHT,
+                overflowY: "auto",
+                overscrollBehavior: "contain",
+              }}
+            >
+              {remaining.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className="filter-item"
+                  onClick={() => { onAdd(s); setOpen(false); }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           )}
         </div>
       )}
@@ -290,18 +289,15 @@ function ModalField({ label, value, onChange }: { label: string; value: string; 
 
 function ImageCropDialog({ file, onCancel, onSave }: { file: File; onCancel: () => void; onSave: (file: File) => void }) {
   useScrollLock();
+  const closeOnClick = useRef(false);
   const [imgEl, setImgEl] = useState<HTMLImageElement | null>(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [dragging, setDragging] = useState(false);
   const startRef = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
 
-  const objectUrlRef = useRef<string | null>(null);
-  if (!objectUrlRef.current) objectUrlRef.current = URL.createObjectURL(file);
-
-  useEffect(() => {
-    return () => { if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current); };
-  }, []);
+  const [objectUrl] = useState(() => URL.createObjectURL(file));
+  useEffect(() => () => URL.revokeObjectURL(objectUrl), [objectUrl]);
 
   const cropSize = 320;
   const outSize = 512;
@@ -364,7 +360,12 @@ function ImageCropDialog({ file, onCancel, onSave }: { file: File; onCancel: () 
   }
 
   return (
-    <div className="modal-backdrop" style={{ zIndex: 60 }} onClick={onCancel}>
+    <div
+      className="modal-backdrop"
+      style={{ zIndex: 60 }}
+      onMouseDown={(e) => { closeOnClick.current = e.target === e.currentTarget; }}
+      onClick={() => { if (closeOnClick.current) onCancel(); }}
+    >
       <div className="modal" style={{ maxWidth: "400px" }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <h3 className="serif" style={{ fontSize: "18px" }}>ครอปรูปพนักงาน</h3>
@@ -389,7 +390,7 @@ function ImageCropDialog({ file, onCancel, onSave }: { file: File; onCancel: () 
             onPointerUp={handlePointerUp}
           >
             <img
-              src={objectUrlRef.current ?? ""}
+              src={objectUrl}
               alt="crop"
               draggable={false}
               onLoad={(e) => { const el = e.currentTarget; setImgEl(el); setOffset({ x: 0, y: 0 }); setZoom(1); }}

@@ -5,6 +5,7 @@ tags:
   - area/module-root
   - entry/module
   - entry/schema
+  - coupling/medium
 ---
 
 # schema.ts

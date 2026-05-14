@@ -4,6 +4,7 @@ tags:
   - module/users
   - area/module-root
   - entry/module
+  - coupling/medium
 ---
 
 # server.ts

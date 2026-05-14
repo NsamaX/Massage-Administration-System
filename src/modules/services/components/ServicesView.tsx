@@ -28,15 +28,21 @@ export function ServicesView({ massages }: { massages: Massage[] }) {
     <>
       <div className="page-head">
         <div>
-          <div className="crumb">05 · studio</div>
+          <div className="crumb">๐๕ · สตูดิโอ</div>
           <h1>แผนบริการ <em>ของร้าน</em></h1>
         </div>
-        <div style={{ textAlign: "right" }}>
+        <div className="page-head-meta">
           <div className="caps">เปิด {active} · ปิดชั่วคราว {paused}</div>
         </div>
       </div>
 
       <div className="svc-grid">
+        <button type="button" className="svc-card svc-add" onClick={handleCreate}>
+          <div>
+            <div className="plus">＋</div>
+            <div className="lbl">เพิ่มแผนบริการ</div>
+          </div>
+        </button>
         {massages.map((service) => (
           <ServiceCard
             key={service.id}
@@ -44,12 +50,6 @@ export function ServicesView({ massages }: { massages: Massage[] }) {
             onEdit={() => handleEdit(service)}
           />
         ))}
-        <button type="button" className="svc-card svc-add" onClick={handleCreate}>
-          <div style={{ textAlign: "center" }}>
-            <div className="plus">＋</div>
-            <div className="lbl">เพิ่มแผนบริการ</div>
-          </div>
-        </button>
       </div>
 
       <EditServiceDialog
@@ -89,7 +89,7 @@ function ServiceCard({ service, onEdit }: { service: Massage; onEdit: () => void
         {service.description && <div className="desc">{service.description}</div>}
         <div className="meta">
           <span>฿{Number(service.price).toLocaleString()}</span>
-          <span>· {service.duration} นาที</span>
+          <span>· {service.durations.length > 1 ? service.durations.join(" / ") : service.duration} นาที</span>
           <span>ค่าแรง {Number(service.hourlyRate).toLocaleString()} ฿/ชม.</span>
         </div>
         <span className={`pill${inactive ? " off" : ""}`}>

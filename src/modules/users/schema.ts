@@ -3,7 +3,7 @@ export type UserRow = {
   name: string;
   role: "dev" | "admin" | "staff";
   employeeId: number | null;
-  lastLoginAt: Date | null;
+  lastLoginAt: string | null;
 };
 
 export type EmployeeOption = {

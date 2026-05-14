@@ -12,7 +12,7 @@ export async function getAuthUsers(): Promise<AuthUser[]> {
       u.id,
       r.name AS role,
       COALESCE(CONCAT(e.first_name, ' ', e.last_name),
-        CASE r.name WHEN 'dev' THEN 'นักพัฒนา' ELSE 'Admin' END
+        'ไม่ระบุ'
       ) AS name
     FROM users u
     JOIN roles r    ON r.id = u.role_id
@@ -29,7 +29,7 @@ export async function validatePin(
   const [rows] = await db.query(
     `SELECT u.id, r.name AS role,
             COALESCE(CONCAT(e.first_name, ' ', e.last_name),
-        CASE r.name WHEN 'dev' THEN 'นักพัฒนา' ELSE 'Admin' END
+        'ไม่ระบุ'
       ) AS name,
             u.pin AS pin_hash
      FROM users u

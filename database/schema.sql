@@ -33,13 +33,16 @@ CREATE TABLE IF NOT EXISTS `skills` (
 
 CREATE TABLE IF NOT EXISTS `employees` (
   `id`                INT           NOT NULL AUTO_INCREMENT,
+  `employee_code`     CHAR(3)       NULL,
   `first_name`        VARCHAR(100)  NOT NULL,
   `last_name`         VARCHAR(100)  NOT NULL,
   `phone`             VARCHAR(20)   NOT NULL DEFAULT '',
   `image_url`         VARCHAR(500)  NULL,
   `employment_status` ENUM('employed','terminated') NOT NULL DEFAULT 'employed',
   `created_at`        DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_employee_code` (`employee_code`),
+  CONSTRAINT `chk_employee_code_format` CHECK (`employee_code` IS NULL OR `employee_code` REGEXP '^[0-9]{3}$')
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `employee_skills` (
@@ -106,6 +109,16 @@ CREATE TABLE IF NOT EXISTS `appointments` (
   CONSTRAINT `fk_apt_employee` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_apt_massage`  FOREIGN KEY (`massage_id`)  REFERENCES `massages`  (`id`),
   CONSTRAINT `fk_apt_room`     FOREIGN KEY (`room_id`)     REFERENCES `rooms`     (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `massage_durations` (
+  `id`           INT NOT NULL AUTO_INCREMENT,
+  `massage_id`   INT NOT NULL,
+  `duration_min` INT NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_massage_duration` (`massage_id`, `duration_min`),
+  CONSTRAINT `fk_md_massage`
+    FOREIGN KEY (`massage_id`) REFERENCES `massages` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `payroll` (

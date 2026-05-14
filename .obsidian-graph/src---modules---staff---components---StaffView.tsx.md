@@ -11,6 +11,6 @@ tags:
 `src/modules/staff/components/StaffView.tsx`
 
 ## Imports
-- [[src---modules---staff---components---StaffDialog.tsx]]
+- [[src---modules---staff---components---SkillsManager.tsx]]
+- [[src---modules---staff---components---StaffTable.tsx]]
 - [[src---modules---staff---schema.ts]]
-- [[src---modules---staff---server.ts]]

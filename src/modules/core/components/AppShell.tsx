@@ -20,8 +20,8 @@ export function AppShell({ user, signOut, children }: Props) {
       {/* Mobile top bar */}
       <div className="m-bar">
         <div className="wm">
-          ma<span className="dot" />
-          <em>sǎn</em>
+          R<span className="dot" />
+          <em>Ǐch</em>
         </div>
         <button
           type="button"
@@ -51,10 +51,9 @@ export function AppShell({ user, signOut, children }: Props) {
         <aside className={`sidebar${menuOpen ? " open" : ""}`}>
           <div className="wordmark" style={{ cursor: "default" }}>
             <div className="wm-name">
-              ma<span className="dot" />
-              <em>sǎn</em>
+              R<span className="dot" />
+              <em>Ǐch</em>
             </div>
-            <div className="wm-tag">massage · management</div>
           </div>
 
           <nav className="nav">

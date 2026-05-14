@@ -19,9 +19,27 @@ function dbError(err: unknown): string {
 
 export async function getMassages(): Promise<Massage[]> {
   const [rows] = await db.query(
-    "SELECT id, name, description, duration_min AS duration, price, hourly_rate AS hourlyRate, image_url, status FROM massages ORDER BY CASE status WHEN 'active' THEN 1 WHEN 'inactive' THEN 2 WHEN 'paused' THEN 3 END, id"
+    `SELECT m.id, m.name, m.description, m.duration_min AS duration,
+            m.price, m.hourly_rate AS hourlyRate, m.image_url, m.status,
+            COALESCE(GROUP_CONCAT(md.duration_min ORDER BY md.duration_min SEPARATOR ','), '') AS duration_options
+     FROM massages m
+     LEFT JOIN massage_durations md ON md.massage_id = m.id
+     GROUP BY m.id, m.name, m.description, m.duration_min, m.price, m.hourly_rate, m.image_url, m.status
+     ORDER BY CASE m.status WHEN 'active' THEN 1 WHEN 'inactive' THEN 2 WHEN 'paused' THEN 3 END, m.id`
   );
-  return rows as Massage[];
+  return (rows as any[]).map((r): Massage => ({
+    id: r.id,
+    name: r.name,
+    description: r.description,
+    duration: Number(r.duration),
+    price: r.price,
+    hourlyRate: r.hourlyRate,
+    image_url: r.image_url ?? null,
+    status: r.status,
+    durations: r.duration_options
+      ? (r.duration_options as string).split(",").map(Number)
+      : [],
+  }));
 }
 
 async function saveImageFile(file: File, serviceId: number): Promise<string> {
@@ -36,6 +54,7 @@ async function saveImageFile(file: File, serviceId: number): Promise<string> {
 
 export async function createMassage(
   data: Pick<Massage, "name" | "description" | "duration" | "price" | "hourlyRate" | "status">,
+  durations: number[],
   imageFile?: File | null
 ): Promise<ActionResult> {
   try {
@@ -44,6 +63,13 @@ export async function createMassage(
       [data.name, data.description, data.duration, data.price, data.hourlyRate, data.status]
     );
     const id = (result as { insertId: number }).insertId;
+    if (durations.length > 0) {
+      const values = durations.map(() => "(?, ?)").join(", ");
+      await db.query(
+        `INSERT IGNORE INTO massage_durations (massage_id, duration_min) VALUES ${values}`,
+        durations.flatMap((d) => [id, d])
+      );
+    }
     if (imageFile && imageFile.size > 0) {
       const imageUrl = await saveImageFile(imageFile, id);
       await db.query("UPDATE massages SET image_url=? WHERE id=?", [imageUrl, id]);
@@ -58,6 +84,7 @@ export async function createMassage(
 export async function updateMassage(
   id: number,
   data: Pick<Massage, "name" | "description" | "duration" | "price" | "hourlyRate" | "status">,
+  durations: number[],
   imageFile?: File | null
 ): Promise<ActionResult> {
   try {
@@ -65,6 +92,14 @@ export async function updateMassage(
       "UPDATE massages SET name=?, description=?, duration_min=?, price=?, hourly_rate=?, status=? WHERE id=?",
       [data.name, data.description, data.duration, data.price, data.hourlyRate, data.status, id]
     );
+    await db.query("DELETE FROM massage_durations WHERE massage_id = ?", [id]);
+    if (durations.length > 0) {
+      const values = durations.map(() => "(?, ?)").join(", ");
+      await db.query(
+        `INSERT INTO massage_durations (massage_id, duration_min) VALUES ${values}`,
+        durations.flatMap((d) => [id, d])
+      );
+    }
     if (imageFile && imageFile.size > 0) {
       const imageUrl = await saveImageFile(imageFile, id);
       await db.query("UPDATE massages SET image_url=? WHERE id=?", [imageUrl, id]);

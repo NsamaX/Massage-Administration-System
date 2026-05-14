@@ -1,5 +1,6 @@
 import { getReportData, getPayrollHistory } from "@/modules/report/server";
 import { ReportView } from "@/modules/report/client";
+import { requireRole } from "@/modules/auth/server";
 
 function getDefaultPeriod() {
   const now = new Date();
@@ -10,6 +11,7 @@ function getDefaultPeriod() {
 }
 
 export default async function ReportPage() {
+  await requireRole(["dev", "admin"]);
   const { start, end } = getDefaultPeriod();
   const [reportData, payrollHistory] = await Promise.all([
     getReportData(start, end),

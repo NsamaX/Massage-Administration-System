@@ -10,34 +10,36 @@ function dbError(_err: unknown): string {
   return "เกิดข้อผิดพลาด กรุณาลองใหม่";
 }
 
-function datetimeToLocal(val: Date | string): string {
-  const d = val instanceof Date ? val : new Date(val);
-  const y = d.getFullYear();
-  const mo = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const h = String(d.getHours()).padStart(2, "0");
-  const mi = String(d.getMinutes()).padStart(2, "0");
-  return `${y}-${mo}-${day}T${h}:${mi}`;
-}
-
 export async function getEntryOptions(): Promise<EntryOptions> {
   const [staffRows, massageRows, roomRows] = await Promise.all([
     db.query(
       "SELECT id, CONCAT(first_name, ' ', last_name) AS name FROM employees WHERE employment_status = 'employed' ORDER BY first_name"
     ),
     db.query(
-      "SELECT id, name, duration_min FROM massages WHERE status = 'active' ORDER BY name"
+      `SELECT m.id, m.name, m.duration_min,
+              GROUP_CONCAT(md.duration_min ORDER BY md.duration_min SEPARATOR ',') AS duration_options
+       FROM massages m
+       LEFT JOIN massage_durations md ON md.massage_id = m.id
+       WHERE m.status = 'active'
+       GROUP BY m.id, m.name, m.duration_min
+       ORDER BY m.name`
     ),
     db.query("SELECT id, room_number FROM rooms ORDER BY room_number"),
   ]);
 
   return {
     staff: (staffRows[0] as any[]).map((r) => ({ id: r.id, label: r.name })),
-    massages: (massageRows[0] as any[]).map((r) => ({
-      id: r.id,
-      label: `${r.name} (${r.duration_min} นาที)`,
-      duration: Number(r.duration_min),
-    })),
+    massages: (massageRows[0] as any[]).map((r) => {
+      const durations: number[] = r.duration_options
+        ? (r.duration_options as string).split(",").map(Number)
+        : [Number(r.duration_min)];
+      return {
+        id: r.id,
+        label: r.name as string,
+        duration: Number(r.duration_min),
+        durations,
+      };
+    }),
     rooms: (roomRows[0] as any[]).map((r) => ({
       id: r.id,
       label: `ห้อง ${r.room_number}`,
@@ -49,11 +51,18 @@ async function fetchRecentEntries(): Promise<RecentEntry[]> {
   const [rows] = await db.query(
     `SELECT
        a.id,
-       CONCAT(e.first_name, ' ', e.last_name) AS staffName,
-       m.name AS massageName,
-       m.duration_min AS durationMin,
-       a.start_time AS startTime,
-       r.room_number AS roomNumber
+       DATE_FORMAT(a.start_time, '%Y-%m-%d')         AS date,
+       TIME_FORMAT(a.start_time, '%H:%i')            AS time,
+       TIME_FORMAT(a.end_time, '%H:%i')              AS endTime,
+       IF(HOUR(a.start_time) < 12, 'AM', 'PM')      AS meridiem,
+       e.employee_code                               AS staffCode,
+       CONCAT(e.first_name, ' ', e.last_name)        AS staffName,
+       e.image_url                                   AS staffImageUrl,
+       m.name                                        AS massageName,
+       TIMESTAMPDIFF(MINUTE, a.start_time, a.end_time) AS durationMin,
+       r.room_number                                 AS roomNumber,
+       COALESCE(a.hourly_rate_snapshot, m.hourly_rate) AS hourlyRateSnapshot,
+       ROUND(CEILING(TIMESTAMPDIFF(MINUTE, a.start_time, a.end_time) / 30) * 0.5 * COALESCE(a.hourly_rate_snapshot, m.hourly_rate), 2) AS computedSalary
      FROM appointments a
      JOIN employees e ON e.id = a.employee_id
      JOIN massages m ON m.id = a.massage_id
@@ -62,13 +71,20 @@ async function fetchRecentEntries(): Promise<RecentEntry[]> {
      ORDER BY a.created_at DESC
      LIMIT 30`
   );
-  return (rows as any[]).map((r) => ({
+  return (rows as any[]).map((r): RecentEntry => ({
     id: r.id,
+    date: r.date,
+    time: r.time,
+    endTime: r.endTime,
+    meridiem: r.meridiem,
+    staffCode: r.staffCode ?? null,
     staffName: r.staffName,
+    staffImageUrl: r.staffImageUrl ?? null,
     massageName: r.massageName,
     durationMin: Number(r.durationMin),
-    startTime: datetimeToLocal(r.startTime as Date | string),
     roomLabel: r.roomNumber != null ? `ห้อง ${r.roomNumber}` : null,
+    hourlyRateSnapshot: Number(r.hourlyRateSnapshot),
+    computedSalary: Number(r.computedSalary),
   }));
 }
 
@@ -80,14 +96,20 @@ export async function addManualEntry(
   employeeId: number,
   massageId: number,
   roomId: number | null,
-  startTime: string | null
+  startTime: string | null,
+  durationMin?: number
 ): Promise<EntryResult> {
   try {
-    const [massageRows] = await db.query(
-      "SELECT duration_min FROM massages WHERE id = ?",
-      [massageId]
-    );
-    const duration = (massageRows as any[])[0]?.duration_min ?? 60;
+    let duration: number;
+    if (durationMin != null) {
+      duration = durationMin;
+    } else {
+      const [massageRows] = await db.query(
+        "SELECT duration_min FROM massages WHERE id = ?",
+        [massageId]
+      );
+      duration = (massageRows as any[])[0]?.duration_min ?? 60;
+    }
 
     if (startTime) {
       const mysqlDt = startTime.replace("T", " ") + ":00";
