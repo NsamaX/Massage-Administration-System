@@ -65,19 +65,19 @@ export function addOneDay(dateStr: string) {
 }
 
 export function exportDetailedCSV(entries: StaffWorkEntry[], startDate: string, endDate: string) {
-  const header = ["รหัส", "ชื่อ-สกุล", "วันที่", "เวลาเริ่ม", "เวลาสิ้นสุด", "แผนนวด", "ระยะเวลา", "ห้อง", "ค่าแรง/ชม", "รายได้"];
+  const header = ["วันที่", "เวลาเริ่ม", "เวลาสิ้นสุด", "รหัส", "ชื่อ-สกุล", "แผนนวด", "ห้อง", "ระยะเวลา", "ค่าแรง/ชม", "รายได้"];
   const lines = [
     header.join(","),
     ...entries.map((e) =>
       [
-        e.staffCode ?? "",
-        `"${e.staffName}"`,
         e.date,
         e.time,
         e.endTime,
+        e.staffCode ?? "",
+        `"${e.staffName}"`,
         `"${e.serviceName}"`,
-        formatDuration(e.durationMin),
         e.roomLabel ?? "",
+        formatDuration(e.durationMin),
         e.hourlyRateSnapshot,
         e.computedSalary,
       ].join(",")
